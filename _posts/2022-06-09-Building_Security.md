@@ -17,10 +17,10 @@ Foritgate --> Filebeat;
 Netflow --> Filebeat;
 Filebeat --> Fleet;
 Fleet --> SIEM[Elastic Search];
-SIEM --> Elastalert;
+SIEM --> |Pull|Elastalert;
 TI[Threat Intelligence] --> Logstash;
 Logstash --> SIEM;
-Elastalert -->|Pull| theHive;
+Elastalert --> theHive;
 theHive --> ST2[Stack Storm];
 cortex --> |Enrichment| theHive;
 {% include mermaid_end.liquid %}
