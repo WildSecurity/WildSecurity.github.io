@@ -14,6 +14,7 @@ In this Blog I will try and reflect on what all used to build it and how I am pl
 graph LR;
 EDR[Elastic Endpoint Security] --> Fleet[Elastic Fleet];
 Foritgate --> Filebeat;
+Suricata --> Filebeat;
 Netflow --> Filebeat;
 Filebeat --> Fleet;
 Fleet --> SIEM[Elastic Search];
