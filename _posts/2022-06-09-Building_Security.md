@@ -27,9 +27,17 @@ cortex --> |Enrichment| theHive;
 
 # Setup
 
-## Elasticsearch
+## Elastic Stack
+
+For my whole Elastic Stack I used the awesome Project of [deviantony](https://github.com/deviantony/docker-elk/tree/tls)
+Basically just follow the documentation over there, it's very detailed.
 
 ## theHive
+
+For theHive I used the official image from
+theHive's [github](https://github.com/TheHive-Project/Docker-Templates/tree/main/docker/thehive4-berkleydb-cortex31)
+Setup is very easy, the basic steps are logging in with default credendials (resetting them) establishing a new org and
+at least one user for that org.
 
 ## Elastalert
 
