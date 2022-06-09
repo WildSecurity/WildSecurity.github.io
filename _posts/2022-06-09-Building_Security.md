@@ -97,8 +97,9 @@ The rules are a bit more tricky, I've tried to use aggregation methods to reduce
 In this example I aggregate based on the user.name and wait for 10min before triggering the alert.
 I would love to have a bit more power here, what if I see another alert in two days of the same user?
 That is a question for another day, I might write my own integration for that.
-Another big painpoint, the Title of the alert sent cannot be a variable, which is just silly, I will open a feature
-request for that later on.
+Another big painpoint, the Title of the alert sent cannot be a variable, which is just stupid.
+I did notice that there is an ongoing [discussion](https://github.com/jertel/elastalert2/discussions/676) on this
+topic...
 
 ````yaml
 name: "Elasticsearch User"
