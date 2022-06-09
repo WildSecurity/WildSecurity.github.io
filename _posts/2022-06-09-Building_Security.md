@@ -10,20 +10,20 @@ In this Blog I will try and reflect on what all used to build it and how I am pl
 
 # Architecture
 
-```mermaid
-graph LR
-    EDR[Elastic Endpoint Security] --> Fleet[Elastic Fleet]
-    Foritgate --> Filebeat
-    Netflow --> Filebeat
-    Filebeat --> Fleet
-    Fleet --> SIEM[Elastic Search]
-    SIEM --> Elastalert
-    TI[Threat Intelligence] --> Logstash
-    Logstash --> SIEM
-    Elastalert -->|Pull| theHive
-    theHive --> ST2[Stack Storm]
-    cortex --> |Enrichment| theHive
-```
+{% include mermaid_start.liquid %}
+graph LR;
+EDR[Elastic Endpoint Security] --> Fleet[Elastic Fleet];
+Foritgate --> Filebeat;
+Netflow --> Filebeat;
+Filebeat --> Fleet;
+Fleet --> SIEM[Elastic Search];
+SIEM --> Elastalert;
+TI[Threat Intelligence] --> Logstash;
+Logstash --> SIEM;
+Elastalert -->|Pull| theHive;
+theHive --> ST2[Stack Storm];
+cortex --> |Enrichment| theHive;
+{% include mermaid_end.liquid %}
 
 # Setup
 
@@ -39,6 +39,7 @@ My setup of Elastalert2 (not to be confused with the original elastalert) is a v
 and rules.
 
 Folder Hierarchy:
+
 ````bash
 └── root
     ├── docker-compose.yml
@@ -46,6 +47,11 @@ Folder Hierarchy:
     └── rules
         └── rule.yaml
 ````
+
+### Docker Compose
+
+The compose file should be more or less selfexplanatory, the volumes are used to get the config into the right places.
+And for the image I used the officiall elastalert2 image
 
 ````yaml
 version: '3.8'
@@ -58,8 +64,13 @@ services:
       - './rules:/opt/elastalert/rules'
     image: jertel/elastalert2
 ````
-{: file='docker-compose.yml'}
 
+{: file='./docker-compose.yml'}
+
+### Elastalert Config
+
+The config I kept very simple for now.
+Basic parameters which are needed are of course elasticsearch credentials and frequency.
 
 ````yaml
 rules_folder: /opt/elastalert/rules
@@ -76,18 +87,26 @@ writeback_index: elastalert-status
 alert_time_limit:
   days: 2
 ````
-{: file='elastalert.yaml'}
 
+{: file='./elastalert.yaml'}
+
+### Rule Example
+
+The rules are a bit more tricky, I've tried to use aggregation methods to reduce duplicate alerts
+(as Elastic doesn't dedub itself).
+In this example I aggregate based on the user.name and wait for 10min before triggering the alert.
+I would love to have a bit more power here, what if I see another alert in two days of the same user?
+That is a question for another day, I might write my own integration for that.
+Another big painpoint, the Title of the alert sent cannot be a variable, which is just silly, I will open a feature
+request for that later on.
 
 ````yaml
 name: "Elasticsearch User"
 type: "any"
 index: ".siem-signals-default"
 is_enabled: true
-#realert:
-#  minutes: 5
 aggregation:
-    minutes: 10
+  minutes: 10
 terms_size: 50
 query_key: 'user.name'
 aggregation_key: 'user.name'
@@ -97,11 +116,11 @@ timestamp_field: "@timestamp"
 timestamp_type: "iso"
 
 filter:
-- term:
-    signal.status: "open"
-- query:
-    wildcard:
-      user.name: "*"
+  - term:
+      signal.status: "open"
+  - query:
+      wildcard:
+        user.name: "*"
 
 alert: hivealerter
 hive_connection:
@@ -112,22 +131,23 @@ hive_alert_config:
   type: 'external'
   source: 'elastalert'
   severity: 2
-  tags: [signal.rule.name, agent.name, user.name]
+  tags: [ signal.rule.name, agent.name, user.name ]
   tlp: 3
   status: 'New'
   follow: True
-  description_args: [rule.name]
+  description_args: [ rule.name ]
   description: '{0}'
 hive_observable_data_mapping:
-    - ip: source.ip
-    - ip: destination.ip
-    - ip: host.ip
-    - domain: source.domain
-    - domain: destination.domain
-    - domain: host.name
-    - domain: dns.question.name
-    - hash: hash.md5
-    - hash: hash.sha1
-    - hash: hash.sha256
+  - ip: source.ip
+  - ip: destination.ip
+  - ip: host.ip
+  - domain: source.domain
+  - domain: destination.domain
+  - domain: host.name
+  - domain: dns.question.name
+  - hash: hash.md5
+  - hash: hash.sha1
+  - hash: hash.sha256
 ````
+
 {: file='rules/rule.yaml'}
