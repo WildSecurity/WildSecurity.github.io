@@ -1,5 +1,5 @@
 ---
-title: Building Elastic Securtity
+title: Building Elastic Security
 date: 2022-06-09 18:40 +0200
 categories: [elastic]
 tags: [elastic, howto]
