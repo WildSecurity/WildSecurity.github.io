@@ -13,7 +13,7 @@ from me ;)
 
 # Architecture
 
-In my personal opinion a modern installation of Elasticstack should looks something like this:
+In my personal opinion a modern installation of Elasticstack should look something like this:
 {% include mermaid_start.liquid %}
 graph TD;
 Logfile --> Filebeat;
@@ -80,3 +80,55 @@ This the Database :)
 ## Kibana
 
 The frontend UI for the whole stack, and also the place we will be in the most time.
+
+# Getting Data
+
+Now that we know a bit about what our setup looks like, let's get into configuring the security parts, and some other
+additional things if necessary.
+But as stated before, I have no intention of writing elastic stack basics.
+
+## Fleet
+
+### Settings
+
+First we need data and for that, I utilise elastic fleet you can get there via the main menu -> Management -> Fleet
+Step one go to settings, and setup an output (most likely an elasticsearch node, since logstash is in beta)
+
+### Agent Policy
+
+After that setup your first Agent Policy, for simplicity I also deploy a Fleet Server in the same policy.
+
+Some interesting integrations (for Windows):
+
+* Fleet Server
+* Endpoint Security
+* Prebuilt Security Detection Rules
+* System
+* Windows
+
+Some interesting integrations (for Linux):
+
+* Fleet Server
+* Endpoint Security
+* Prebuilt Security Detection Rules
+* System
+* Auditd
+
+Most integrations are very straight forward to deploy (just add them to the correct policy), except "Endpoint Security",
+on Linux make sure to add the flag "Include Session Data" {: .prompt-info } This is only possible *after* adding the
+integration to the agent policy and then editing it again.
+
+### Agent
+
+Go to Agents and click "Add agent" in the following prompts select the correct policy, select "Quick Start"
+(of course, don't do that in production).
+Under add fleet server host if you are deploying a fleet server in the policy point to https://127.0.0.1:8220 (default),
+otherwise point to wherever your fleet server host is.
+After that you can generate a service token and deploy an agent wherever you want.
+As soon as the agent is deployed it should pull its configuration and start sending the data you selected.
+
+# Elastic Security
+
+## Default Rules
+
+First let's enable the default rules by going to Security -> Alerts -> Rules and downloading the default policies.
