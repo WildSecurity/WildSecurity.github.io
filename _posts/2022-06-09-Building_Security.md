@@ -161,3 +161,9 @@ hive_observable_data_mapping:
 ````
 
 {: file='rules/rule.yaml'}
+
+### Stack Storm
+
+This I've not been able to build to my satisfaction yet.
+But the basic premisses are simple get this [project](https://github.com/StackStorm/st2-docker)
+and ````docker-compose up -d````
