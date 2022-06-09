@@ -31,7 +31,7 @@ cortex --> |Enrichment| theHive;
 
 For my whole Elastic Stack I used the awesome Project of [deviantony](https://github.com/deviantony/docker-elk/tree/tls)
 Basically just follow the documentation over there, it's very detailed.
-Detailed setup of the security part itself will follow in another blog
+Detailed setup of the security part itself will follow in another [blog](https://wildsecurity.github.io/posts/Elastic_Security/)
 
 ## theHive
 
