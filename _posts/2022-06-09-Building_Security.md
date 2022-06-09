@@ -38,6 +38,14 @@ this is subject to change however in case I get annoyed enough.
 My setup of Elastalert2 (not to be confused with the original elastalert) is a very simple docker container with config
 and rules.
 
+Folder Hierarchy:
+````bash
+└── root
+    ├── docker-compose.yml
+    ├── elastalert.yaml
+    └── rules
+        └── rule.yaml
+````
 
 ````yaml
 version: '3.8'
@@ -46,8 +54,8 @@ services:
     container_name: elastalert
     restart: unless-stopped
     volumes:
-      - './vol/elastalert/elastalert.yaml:/opt/elastalert/config.yaml'
-      - './vol/elastalert/rules:/opt/elastalert/rules'
+      - './elastalert.yaml:/opt/elastalert/config.yaml'
+      - './rules:/opt/elastalert/rules'
     image: jertel/elastalert2
 ````
 {: file='docker-compose.yml'}
