@@ -26,22 +26,24 @@ When the risk hits 10, it will be set to 0
 
 {% include mermaid_start.liquid %}
 sequenceDiagram;
-  Risk Block->>Event Risk (0-100): Set Risk;
-  Alert Rule->>Event Risk (0-100): Set Risk;
-  loop Every 5 minutes;
-  Risk Builder->>Event Risk (0-100): Get Risk;
-  Risk Builder->>Entity Risk: Increment by Risk;
-  Entity Risk->>Entity Risk: If admin multiply risk by 2;
-  end;
-  loop Every 60 minutes;
-  Risk Builder->>Entity Risk: Decrease by 0.75*Entity Risk;
-  end;
+Risk Block->>Event Risk (0-100): Set Risk;
+Alert Rule->>Event Risk (0-100): Set Risk;
+loop Every 5 minutes;
+Risk Builder->>Event Risk (0-100): Get Risk;
+Risk Builder->>Entity Risk: Increment by Risk;
+Entity Risk->>Entity Risk: If admin multiply risk by 2;
+end;
+loop Every 60 minutes;
+Risk Builder->>Entity Risk: Decrease by 0.75*Entity Risk;
+end;
 {% include mermaid_end.liquid %}
 
 ## The script
 
 There are two scripts, one which runs every 5 minutes to calculate risk and build a history, and another that runs
 hourly, to deprecate the risk.
+
+{: file='./risk_scoring.py'}
 
 ````python
 import datetime
@@ -187,7 +189,7 @@ if __name__ == '__main__':
   main()
 ````
 
-{: file='./risk_scoring.py'}
+{: file='./risk_deprecation.py'}
 
 ````python
 from elasticsearch import Elasticsearch
@@ -232,7 +234,7 @@ if __name__ == '__main__':
   main()
 ````
 
-{: file='./risk_deprecation.py'}
+{: file='./build_indexes.py'}
 
 ````python
 from elasticsearch import Elasticsearch
@@ -323,4 +325,3 @@ remove_store()
 remove_risk_history()
 ````
 
-{: file='./build_indexes.py'}
