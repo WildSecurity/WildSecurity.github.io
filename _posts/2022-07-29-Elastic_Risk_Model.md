@@ -25,17 +25,13 @@ Every hour the existing user risk will be deprecated by 25% (subject to change).
 When the risk hits 10, it will be set to 0
 
 {% include mermaid_start.liquid %}
-sequenceDiagram;
-Risk Block->>Event Risk (0-100): Set Risk;
-Alert Rule->>Event Risk (0-100): Set Risk;
-loop Every 5 minutes;
-Risk Builder->>Event Risk (0-100): Get Risk;
-Risk Builder->>Entity Risk: Increment by Risk;
-Entity Risk->>Entity Risk: If admin multiply risk by 2;
-end;
-loop Every 60 minutes;
-Risk Builder->>Entity Risk: Decrease by 0.75*Entity Risk;
-end;
+graph LR;
+RB[Risk Block] -.->|Set Risk| ER[Event Risk 0-100];
+AR[Alert Rule] -.->|Set Risk| ER;
+RC[Risk builder] --> |Every 5 minutes get risk| ER;
+RC -->|Every 5 minutesIncrement by risk| EN["Entitiy Risk"];
+EN -->|if Admin multiply by 2| EN;
+RC -->|Every hour Decrease risk by 25%| EN;
 {% include mermaid_end.liquid %}
 
 ## The script
