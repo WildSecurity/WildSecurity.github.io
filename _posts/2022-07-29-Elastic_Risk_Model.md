@@ -34,10 +34,104 @@ EN -->|if Admin multiply by 2| EN;
 RC -->|Every hour Decrease risk by 25%| EN;
 {% include mermaid_end.liquid %}
 
-## The script
+## The script(s)
 
 There are two scripts, one which runs every 5 minutes to calculate risk and build a history, and another that runs
 hourly, to deprecate the risk.
+
+### Indexes
+
+First thing to do, is build the indexes.
+
+| Index                       | Fields                                                         | Usage                                                      |
+|-----------------------------|----------------------------------------------------------------|------------------------------------------------------------|
+| security.risk_score         | @timestamp<br/>user.name<br/>user.risk_score<br/>event.dataset | Tracking active user risk score                            |
+| security.risk_score_history | @timestamp<br/>user.name<br/>user.risk_score<br/>event.dataset | Tracking historical user risk score                        |
+| security.store              | @timestamp<br/>alert_uuid<br/>event.dataset                    | Tracking which alerts where already used to calculate risk |
+
+{: file='./build_indexes.py'}
+
+````python
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
+
+
+def remove_risk():
+  try:
+    es.indices.delete(index="security.risk_score", ignore=[400, 404])
+  except:
+    print("Unable to remove old index")
+
+  index_mapping = {
+    "properties": {
+      "@timestamp": {"type": "date"},
+      "user": {
+        "properties": {
+          "name": {"type": "keyword"},
+          "risk_score": {"type": "long"},
+        }
+      },
+      "event": {
+        "properties": {"dataset": {"type": "keyword", "ignore_above": 1024}}
+      },
+    }
+  }
+  es.indices.create(index="security.risk_score", mappings=index_mapping)
+
+
+def remove_risk_history():
+  try:
+    es.indices.delete(index="security.risk_score_history", ignore=[400, 404])
+  except:
+    print("Unable to remove old index")
+
+  index_mapping = {
+    "properties": {
+      "@timestamp": {"type": "date"},
+      "user": {
+        "properties": {
+          "name": {"type": "keyword"},
+          "risk_score": {"type": "long"},
+        }
+      },
+      "event": {
+        "properties": {"dataset": {"type": "keyword", "ignore_above": 1024}}
+      },
+    }
+  }
+  es.indices.create(index="security.risk_score_history", mappings=index_mapping)
+
+
+def remove_store():
+  try:
+    es.indices.delete(index="security.store", ignore=[400, 404])
+  except:
+    print("Unable to remove old index")
+
+  index_mapping = {
+    "properties": {
+      "@timestamp": {"type": "date"},
+      "alert_uuid": {"type": "keyword"},
+      "event": {
+        "properties": {"dataset": {"type": "keyword", "ignore_above": 1024}}
+      },
+    }
+  }
+  es.indices.create(index="security.store", mappings=index_mapping)
+
+
+es = Elasticsearch("https://localhost:9200",
+                   basic_auth=("user",
+                               "password"))
+remove_risk()
+remove_store()
+remove_risk_history()
+````
+
+### Risk Scoring
+
+Now we need a script to build a bit of logic around the existing alerts, and combine them into risk by user.
+Appended is a bare-bones script on how this could be done.
 
 {: file='./risk_scoring.py'}
 
@@ -185,6 +279,11 @@ if __name__ == '__main__':
   main()
 ````
 
+###
+
+At last, we need a little script to deprecate the risk over time.
+In this example I let the risk deprecate by 25% everytime it is run, and I run it once an hour
+
 {: file='./risk_deprecation.py'}
 
 ````python
@@ -230,94 +329,5 @@ if __name__ == '__main__':
   main()
 ````
 
-{: file='./build_indexes.py'}
 
-````python
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
-
-
-def remove_risk():
-  try:
-    es.indices.delete(index="security.risk_score", ignore=[400, 404])
-  except:
-    print("Unable to remove old index")
-
-  index_mapping = {
-    "properties": {
-      "@timestamp": {"type": "date"},
-      "user": {
-        "properties": {
-          "name": {"type": "keyword"},
-          "risk_score": {"type": "long"},
-        }
-      },
-      "host": {
-        "properties": {
-          "name": {"type": "keyword"},
-          "risk_score": {"type": "long"},
-        }
-      },
-      "event": {
-        "properties": {"dataset": {"type": "keyword", "ignore_above": 1024}}
-      },
-    }
-  }
-  es.indices.create(index="security.risk_score", mappings=index_mapping)
-
-
-def remove_risk_history():
-  try:
-    es.indices.delete(index="security.risk_score_history", ignore=[400, 404])
-  except:
-    print("Unable to remove old index")
-
-  index_mapping = {
-    "properties": {
-      "@timestamp": {"type": "date"},
-      "user": {
-        "properties": {
-          "name": {"type": "keyword"},
-          "risk_score": {"type": "long"},
-        }
-      },
-      "host": {
-        "properties": {
-          "name": {"type": "keyword"},
-          "risk_score": {"type": "long"},
-        }
-      },
-      "event": {
-        "properties": {"dataset": {"type": "keyword", "ignore_above": 1024}}
-      },
-    }
-  }
-  es.indices.create(index="security.risk_score_history", mappings=index_mapping)
-
-
-def remove_store():
-  try:
-    es.indices.delete(index="security.store", ignore=[400, 404])
-  except:
-    print("Unable to remove old index")
-
-  index_mapping = {
-    "properties": {
-      "@timestamp": {"type": "date"},
-      "alert_uuid": {"type": "keyword"},
-      "event": {
-        "properties": {"dataset": {"type": "keyword", "ignore_above": 1024}}
-      },
-    }
-  }
-  es.indices.create(index="security.store", mappings=index_mapping)
-
-
-es = Elasticsearch("https://localhost:9200",
-                   basic_auth=("user",
-                               "password"))
-remove_risk()
-remove_store()
-remove_risk_history()
-````
 
