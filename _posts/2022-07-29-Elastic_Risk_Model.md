@@ -26,16 +26,16 @@ When the risk hits 10, it will be set to 0
 
 {% include mermaid_start.liquid %}
 sequenceDiagram;
-Risk Block->>Event Risk (0-100): Set Risk;
-Alert Rule->>Event Risk (0-100): Set Risk;
-loop Every 5 minutes;
-Risk Builder->>Event Risk (0-100): Get Risk;
-Risk Builder->>Entity Risk: Increment by Risk;
-Entity Risk->>Entity Risk: If admin multiply risk by 2;
-end;
-loop Every 60 minutes;
-Risk Builder->>Entity Risk: Decrease by 0.75*Entity Risk;
-end;
+  Risk Block->>Event Risk (0-100): Set Risk;
+  Alert Rule->>Event Risk (0-100): Set Risk;
+  loop Every 5 minutes;
+  Risk Builder->>Event Risk (0-100): Get Risk;
+  Risk Builder->>Entity Risk: Increment by Risk;
+  Entity Risk->>Entity Risk: If admin multiply risk by 2;
+  end;
+  loop Every 60 minutes;
+  Risk Builder->>Entity Risk: Decrease by 0.75*Entity Risk;
+  end;
 {% include mermaid_end.liquid %}
 
 ## The script
