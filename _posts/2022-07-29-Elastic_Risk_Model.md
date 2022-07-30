@@ -9,29 +9,44 @@ Lately I have been thinking about how to do a risk scoring model in Elasticsearc
 Yes I am aware that there are risk models
 for [users](https://www.elastic.co/guide/en/security/current/user-risk-score.html) and
 for [hosts](https://www.elastic.co/guide/en/security/current/host-risk-score.html)
-But these are heavily dependent on machine learning, and sind I have no ML license, I thought it may be interesting to
-build something without ML
+But these are heavily dependent on machine learning, and since I have no ML license, I thought it may be interesting to
+build something without ML.
+QRadar does this in a very similar fashion.
 
 ## The Process
 
-I buildt the whole thing on top of the existing logic, every alert has a risk score of 0-100.
-Additionally, I implemented building blocks that I called "risk blocks" for additional scoring without affecting alerts.
-The risk of these alerts and risk blocks together, aggregated by user.name will make up the risk score.
-This will make a scoring of 0 to infinity for every user.
+I built the whole thing on top of the existing logic, every alert has a risk score of 0-100.
+Additionally, I implemented building blocks that I will call "risk blocks" for additional scoring without affecting the
+normal alerting engine, no need to generate alerts for simple things like brute force attacks against someone.
+The risk of these alerts and risk blocks together, grouped by user.name will make up the risk score.
+This will result in a score of 0 to infinity for every user.
 The score is multiplied by 2, if the user is an admin, this is to get a better visibility of admins.
-Not perfect, but other products do it like that too ;)
+Not perfect, but it's a start and has zero ML
 
 Every hour the existing user risk will be deprecated by 25% (subject to change).
 When the risk hits 10, it will be set to 0
 
+Every 10 minutes an alert rule called "User Risk Score High" will check if any user has a score over a threshold of X.
+This rule of course is excluded from adding risk to a user, wouldn't be fair otherwise ;)
+
 {% include mermaid_start.liquid %}
 graph LR;
-RB[Risk Block] -.->|Set Risk| ER[Event Risk 0-100];
+RB[Risk Block] -..->|Set Risk| ER[Event Risk 0-100];
 AR[Alert Rule] -.->|Set Risk| ER;
-RC[Risk builder] --> |Every 5 minutes get risk| ER;
+RC --> |Every 5 minutes get risk| ER;
 RC -->|Every 5 minutesIncrement by risk| EN["Entitiy Risk"];
 EN -->|if Admin multiply by 2| EN;
-RC -->|Every hour Decrease risk by 25%| EN;
+RD -->|Every hour Decrease risk by 25%| EN;
+subgraph Alerting Engine;
+alert[User Risk Score High];
+RB;
+AR;
+end;
+alert --->|Alert if over threshold| EN;
+subgraph Script;
+RC[Risk Builder];
+RD[Risk Decrementer];
+end;
 {% include mermaid_end.liquid %}
 
 ## The script(s)
@@ -53,7 +68,6 @@ First thing to do, is build the indexes.
 
 ````python
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
 
 
 def remove_risk():
@@ -142,6 +156,11 @@ from elasticsearch_dsl import Search
 
 
 def get_current_risk(client):
+  """
+  This Function is built to get the current risk of the users
+  :param client: Elasticsearch DSL Client
+  :return: User risk
+  """
   s = Search(using=client, index="security.risk_score")
   s = s.filter("exists", field="user")
   response = s.scan()
@@ -153,6 +172,11 @@ def get_current_risk(client):
 
 
 def get_stored_uuids(client):
+  """
+  This function is built to get all stored UUIDs so we don't accidentally use an alert twice to increase risk.
+  :param client: Elasticsearch DSL Client
+  :return: Stored UUIDs
+  """
   s = Search(using=client, index="security.store")
   s = s.filter("exists", field="alert_uuid")
   response = s.scan()
@@ -164,6 +188,14 @@ def get_stored_uuids(client):
 
 
 def calculate_risk(client, users, uuids):
+  """
+  This function calculates the risk of all users by accumulating the seen alert risk score by user.
+  This score is then doubled if the user is in fact an admin
+  :param client: Elasticsearch DSL Client
+  :param users: dict: All existing users and their risk
+  :param uuids: list: All stored uuids of previous alerts
+  :return:
+  """
   s = Search(using=client, index=".internal.alerts-security.alerts-*")
   s = s.filter("exists", field="user.name")
   s = s.exclude("match", kibana__alert__rule__name="User Risk Score High")
@@ -205,6 +237,12 @@ def calculate_risk(client, users, uuids):
 
 
 def push_risk(es, users):
+  """
+  This function is used to push the risk of all changed users to elasticsearch
+  :param es: Elasticsearch client (not DSL)
+  :param users: dict: List of all changed users
+  :return: Returns True or False based if data was pushed or not
+  """
   date = datetime.datetime.now(datetime.timezone.utc)
   es_array = []
   date = datetime.datetime.now(datetime.timezone.utc)
@@ -225,6 +263,12 @@ def push_risk(es, users):
 
 
 def push_uuids(es, uuids):
+  """
+  This function stores all uuids used in elasticsearch
+  :param es:
+  :param uuids:
+  :return: nothing
+  """
   date = datetime.datetime.now(datetime.timezone.utc)
   es_array = []
   for alert in uuids:
@@ -237,6 +281,12 @@ def push_uuids(es, uuids):
 
 
 def risk_history(client, es):
+  """
+  This function duplicates the current risk of a user to a secondary table for history
+  :param client: Elasticsearch DSL Client
+  :param es: Elasticsearch client (not DSL)
+  :return: nothing
+  """
   s = Search(using=client, index="security.risk_score")
   s = s.filter("exists", field="user.name")
   response = s.scan()
