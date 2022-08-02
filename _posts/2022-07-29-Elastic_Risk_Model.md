@@ -379,5 +379,10 @@ if __name__ == '__main__':
   main()
 ````
 
+## The Result
 
+Now that we have the risk data monitored, we can for example build a simple dashboard with "lense" to visualise it:
 
+![alerts](/assets/img/posts/2022-07-29/dashboard.jpg)
+
+Or we can build an alert rule which activates once a threshold is broken etc.
