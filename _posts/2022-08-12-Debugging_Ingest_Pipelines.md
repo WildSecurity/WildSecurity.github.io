@@ -104,7 +104,7 @@ there is a bit of information about other on_failure fields.
 - on_failure_pipeline
 
 From this list we can already see, the field "on_failure_pipeline" is very interesting, because it will tell us which
-pipeline failed.
+pipeline failed, a little side note here, I have seen this field to not yield anything.
 On top of that the "on_failure_processor_type" is interesting because it will tell us what failed on a processor (the
 processor itself or for example a condition).
 And the last one "on_failure_processor_tag" is interesting because it will throw out the tags of a processor.
@@ -131,6 +131,7 @@ Anyway, we have a processor now, and we can attach this to every Ingest Pipeline
 Or we could do some simple scripting to automatically set the processor.
 
 Sample Script:
+(since on_failure_pipeline sometimes fails, I decided to use the pipeline name instead)
 
 ````python
 from elasticsearch import Elasticsearch
@@ -141,19 +142,21 @@ def get_pipelines(es):
 
 
 def put_pipelines(es, pipelines, search="logs_"):
-  failure_processor = [
-    {
-      "append": {
-        "field": "error.message",
-        "value": [
-          "Processor {{ _ingest.on_failure_processor_type }} with tag {{ _ingest.on_failure_processor_tag }} in pipeline {{ _ingest.on_failure_pipeline }} failed with message: {{ _ingest.on_failure_message }}"
-        ],
-      }
-    }
-  ]
   for pipeline_name in pipelines:
     if search in pipeline_name:
       print(pipeline_name)
+      failure_processor = [
+        {
+          "append": {
+            "field": "error.message",
+            "value": [
+              'Processor "{{ _ingest.on_failure_processor_type }}" with tag "{{ _ingest.on_failure_processor_tag }}" in pipeline "'
+              + pipeline_name
+              + '" failed with message: "{{ _ingest.on_failure_message }}"'
+            ],
+          }
+        }
+      ]
       es.ingest.put_pipeline(
         id=pipeline_name,
         processors=pipelines[pipeline_name]["processors"],
