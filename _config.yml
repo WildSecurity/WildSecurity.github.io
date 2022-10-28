@@ -30,10 +30,10 @@ description: >-                        # used by seo meta and the atom feed
   Everything to do with Red- and Blueteam.
 
 # fill in the protocol & hostname for your site, e.g., 'https://username.github.io'
-url: 'https://demonwarext.github.io/'
+url: 'https://WildDogOne.github.io/'
 
 github:
-  username: DemonWareXT             # change to your github username
+  username: WildDogOne             # change to your github username
 
 twitter:
   username: none             # change to your twitter username
@@ -41,11 +41,11 @@ twitter:
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
-  name: Linus
+  name: WildDogOne
   email: example@doamin.com             # change to your email address
   links:
     # The first element serves as the copyright owner's link
-    - https://github.com/DemonWareXT/       # change to your github homepage
+    - https://github.com/WildDogOne/       # change to your github homepage
     # - https://twitter.com/username      # change to your twitter homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
